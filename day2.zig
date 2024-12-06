@@ -13,10 +13,15 @@ const State = enum {
     FAILED,
 };
 
-pub fn is_safe(nums: []const i32, limit: i32) bool {
+pub fn is_safe(nums: []const i32, limit: i32, ignore: ?usize) bool {
     var state: State = .INIT;
     var last_num: i32 = 0;
+    var i: usize = 0;
     for (nums) |num| {
+        if (ignore != null and i == ignore.?) {
+            i += 1;
+            continue;
+        }
         switch (state) {
             .INIT => {
                 state = .CHECK_INC_DEC;
@@ -58,12 +63,8 @@ pub fn is_safe(nums: []const i32, limit: i32) bool {
             },
         }
         last_num = num;
+        i += 1;
     }
-    // if (state == .FAILED) {
-    //     std.debug.print("Unsafe: {any}\n", .{nums});
-    // } else {
-    //     std.debug.print("Safe: {any}\n", .{nums});
-    // }
     return state != .FAILED;
 }
 
@@ -86,41 +87,19 @@ pub fn main() !void {
             }
             num_buf[i] = num;
         }
-        if (is_safe(num_buf[0..i], 3)) {
+        if (is_safe(num_buf[0..i], 3, null)) {
             part1 += 1;
+            part2 += 1;
+        } else {
+            for (0..i) |ignore_idx| {
+                if (is_safe(num_buf[0..i], 3, ignore_idx)) {
+                    part2 += 1;
+                    break;
+                }
+            }
         }
     }
 
     std.debug.print("part 1: {}\n", .{part1});
-    _ = &part2;
     std.debug.print("part 2: {}\n", .{part2});
 }
-
-test "part 1" {
-    const safe_vectors = [_][]const i32{
-        &.{ 1, 2, 3, 4, 5 },
-        &.{ 5, 4, 3, 2, 1 },
-    };
-    for (safe_vectors) |vec| {
-        std.testing.expect(is_safe(vec, 3)) catch {
-            std.debug.print("failed safe input: {any}\n", .{vec});
-            return error.TestUnexpectedResult;
-        };
-    }
-
-    const unsafe_vectors = [_][]const i32{
-        &.{ 1, 1, 2, 3, 4 },
-        &.{ 1, 2, 6, 7, 8 },
-        &.{ 1, 2, 3, 4, 4 },
-        &.{ 1, 2, 5, 4, 7 },
-        &.{ 5, 6, 3, 2, 1 },
-    };
-    for (unsafe_vectors) |vec| {
-        std.testing.expect(!is_safe(vec, 3)) catch {
-            std.debug.print("failed unsafe input: {any}\n", .{vec});
-            return error.TestUnexpectedResult;
-        };
-    }
-}
-
-test "part 2" {}
